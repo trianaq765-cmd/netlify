@@ -3,69 +3,20 @@ const crypto = require('crypto');
 const config = require('../../config');
 const db = require('../../lib/redis');
 
-const UNAUTHORIZED_HTML = `<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Unauthorized | Premium Protect</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html {
-            width: 100%; height: 100%; overflow: hidden;
-            background-color: #000000;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: #ffffff;
-        }
-        .bg-layer {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(270deg, #000000, #0f172a, #1e1b4b, #0f172a, #000000);
-            background-size: 800% 800%;
-            animation: gradientShift 30s ease infinite;
-            z-index: 1;
-        }
-        .container {
-            position: relative; z-index: 10; height: 100vh;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            text-align: center; padding: 20px; user-select: none;
-        }
-        .shield { font-size: 4rem; margin-bottom: 20px; }
-        .auth-label {
-            display: flex; align-items: center; gap: 12px;
-            color: #ef4444; font-size: 1.1rem; font-weight: 600;
-            letter-spacing: 3px; text-transform: uppercase;
-            margin-bottom: 25px;
-        }
-        h1 { color: #ffffff; font-size: 2rem; font-weight: 800; margin: 0 0 20px 0; }
-        p { color: rgba(255, 255, 255, 0.4); font-size: 1.1rem; }
-        .code { margin-top: 30px; padding: 15px 30px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: rgba(255, 255, 255, 0.6); }
-        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    </style>
-</head>
-<body>
-    <div class="bg-layer"></div>
-    <div class="container">
-        <div class="shield">🛡️</div>
-        <div class="auth-label"><span>⛔</span> Access Denied <span>⛔</span></div>
-        <h1>You are not authorized to view this resource.</h1>
-        <p>This endpoint is protected and requires valid executor authentication.</p>
-        <div class="code">Error Code: 403 | Forbidden</div>
-    </div>
-</body>
-</html>`;
+const UNAUTHORIZED_HTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>403</title><style>*{margin:0;padding:0}body{background:#000;color:#fff;font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh}.c{text-align:center}.s{font-size:4rem;margin-bottom:1rem}h1{color:#ef4444}p{color:#666}</style></head><body><div class="c"><div class="s">🛡️</div><h1>403 Forbidden</h1><p>Access Denied</p></div></body></html>`;
 
 function generateFakeScript() {
     const r = (l) => { let s = ''; const c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_'; for (let i = 0; i < l; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
     const n = () => Math.floor(Math.random() * 99999);
-    const v = Array.from({length: 15}, () => r(Math.floor(Math.random() * 4) + 2));
-    const f = Array.from({length: 50}, () => `"\\${n()}\\${n()}"`).join(',');
-    return `local ${v[0]}=(function()local ${v[1]}={${f}};local ${v[2]}=0;for ${v[3]}=1,#${v[1]} do ${v[2]}=${v[2]}+(string.byte(${v[1]}[${v[3]}],1)or 0)end;return ${v[2]} end)();local ${v[4]}=coroutine.wrap(function()for ${v[5]}=1,${n()} do coroutine.yield(${v[5]}*${n()})end end);pcall(function()while true do local ${v[6]}=${v[4]}()if not ${v[6]} then break end end end);`;
+    const h = () => { let x = ''; for (let i = 0; i < Math.floor(Math.random() * 15) + 5; i++) x += '\\' + Math.floor(Math.random() * 255); return x; };
+    const v = Array.from({length: 20}, () => r(Math.floor(Math.random() * 4) + 2));
+    const f = Array.from({length: 80}, () => `"${h()}"`).join(',');
+    const t = Array.from({length: 40}, () => `[${n()}]="${r(10)}"`).join(',');
+    return `local ${v[0]}=(function()local ${v[1]}={${f}};local ${v[2]}={${t}};local ${v[3]}=0;for ${v[4]}=1,#${v[1]} do ${v[3]}=${v[3]}+((string.byte(${v[1]}[${v[4]}]:sub(1,1))or 0)%256)end;return ${v[3]} end)();local ${v[5]}=coroutine.wrap(function()for ${v[6]}=1,${n()} do local ${v[7]}=bit32.bxor(${v[6]},${n()})coroutine.yield(${v[7]})end end);local ${v[8]}=setmetatable({${t}},{__index=function(t,k)return rawget(t,k)or"${r(16)}"end,__newindex=function()end});(function()local ${v[9]}={}for ${v[10]}=1,math.random(50,150)do ${v[9]}[${v[10]}]=string.rep("${r(4)}",math.random(5,20)):reverse()end;for _,${v[11]} in pairs(${v[9]})do local ${v[12]}=string.char(table.unpack({${Array.from({length:10},()=>Math.floor(Math.random()*90)+32).join(',')}}))end end)();local ${v[13]}=function(${v[14]})local ${v[15]}=${v[14]} or 0;for ${v[16]}=1,${n()}do ${v[15]}=${v[15]}+math.sin(${v[16]})*math.cos(${v[16]}/2)end;return ${v[15]}end;pcall(function()local ${v[17]}=0 while ${v[17]}<100 do local ${v[18]}=${v[5]}()if not ${v[18]} then break end;${v[17]}=${v[17]}+1;${v[13]}(${v[18]})end end);local ${v[19]}=(function()return game and game:GetService("RunService"):IsClient()end)()or false;`;
 }
 
 function getClientIP(event) {
-    return event.headers['x-forwarded-for']?.split(',')[0]?.trim() || event.headers['client-ip'] || 'unknown';
+    return event.headers['x-forwarded-for']?.split(',')[0]?.trim() || event.headers['client-ip'] || event.headers['x-real-ip'] || 'unknown';
 }
 
 function getHWID(event) { return event.headers['x-hwid'] || null; }
@@ -76,20 +27,89 @@ async function logAccess(event, action, success, details = {}) {
     await db.addLog(log);
 }
 
+function isValidExecutor(event) {
+    const ua = (event.headers['user-agent'] || '').toLowerCase();
+    const validExecutors = [
+        'roblox', 'synapse', 'krnl', 'fluxus', 'delta', 'electron',
+        'script-ware', 'scriptware', 'sentinel', 'oxygen', 'evon',
+        'arceus', 'hydrogen', 'vegax', 'trigon', 'comet', 'solara',
+        'wave', 'zorara', 'codex', 'celery', 'swift', 'sirhurt',
+        'wininet', 'executor', 'exploit', 'coco', 'temple', 'valyse',
+        'jjsploit', 'wearedevs', 'nihon'
+    ];
+    
+    const hasValidUA = validExecutors.some(e => ua.includes(e));
+    const hasRobloxHeaders = event.headers['x-roblox-id'] && event.headers['x-place-id'] && event.headers['x-job-id'];
+    const hasExecutorToken = event.headers['x-executor-token'];
+    const hasHWID = event.headers['x-hwid'];
+    
+    return hasValidUA || hasRobloxHeaders || hasExecutorToken || hasHWID;
+}
+
 function isBrowser(event) {
     const accept = event.headers['accept'] || '';
     const ua = (event.headers['user-agent'] || '').toLowerCase();
-    const executors = ['roblox','synapse','krnl','fluxus','delta','electron','script-ware','sentinel','oxygen','evon','arceus','hydrogen','vegax','trigon','comet','solara','wave','zorara','codex','celery','swift','sirhurt','wininet','executor','exploit'];
-    if (executors.some(k => ua.includes(k))) return false;
-    return accept.includes('text/html') && (ua.includes('mozilla') || ua.includes('chrome')) && event.headers['accept-language'];
+    
+    if (isValidExecutor(event)) return false;
+    
+    const hasBrowserHeaders = event.headers['accept-language'] && 
+                              (event.headers['sec-fetch-dest'] || 
+                               event.headers['sec-fetch-mode'] || 
+                               event.headers['sec-ch-ua']);
+    
+    const hasBrowserUA = ['mozilla', 'chrome', 'safari', 'firefox', 'edge', 'opera'].some(b => ua.includes(b));
+    
+    return (accept.includes('text/html') && hasBrowserUA) || hasBrowserHeaders;
 }
 
 function isBot(event) {
+    if (isValidExecutor(event)) return false;
+    
     const ua = (event.headers['user-agent'] || '').toLowerCase();
-    if (event.headers['x-roblox-id'] && event.headers['x-place-id'] && event.headers['x-job-id']) return false;
-    if (event.headers['x-executor-token']) return false;
-    const indicators = [!ua || ua.length < 10, event.headers['accept-language'] && event.headers['accept']?.includes('text/html'), event.headers['sec-fetch-dest'] || event.headers['sec-ch-ua'], event.headers['referer'] || event.headers['origin'], /bot|crawler|spider|python|node|axios|curl|wget|postman|discord|crypta|http-client/i.test(ua), ua.includes('mozilla') && ua.includes('chrome') && !ua.includes('roblox')];
-    return indicators.filter(Boolean).length >= 1;
+    const accept = event.headers['accept'] || '';
+    
+    const botPatterns = [
+        'bot', 'crawler', 'spider', 'scraper', 'curl', 'wget', 'python',
+        'node', 'axios', 'fetch', 'http', 'request', 'postman', 'insomnia',
+        'discord', 'telegram', 'slack', 'whatsapp', 'facebook', 'twitter',
+        'crypta', 'mee6', 'dyno', 'carl', 'dank', 'groovy', 'rythm',
+        'java', 'okhttp', 'apache', 'libwww', 'perl', 'ruby', 'php',
+        'go-http', 'aiohttp', 'httpx', 'got/', 'undici', 'needle',
+        'superagent', 'restsharp', 'guzzle', 'unirest'
+    ];
+    
+    const hasBotUA = botPatterns.some(p => ua.includes(p));
+    const hasEmptyUA = !ua || ua.length < 10;
+    const hasBrowserUA = ['mozilla', 'chrome', 'safari', 'firefox', 'edge'].some(b => ua.includes(b));
+    const hasRobloxUA = ['roblox', 'wininet', 'executor', 'exploit'].some(r => ua.includes(r));
+    
+    const hasSuspiciousHeaders = 
+        event.headers['accept-language'] && accept.includes('text/html') && !hasRobloxUA;
+    
+    const hasSecurityHeaders = 
+        event.headers['sec-fetch-dest'] || 
+        event.headers['sec-fetch-mode'] || 
+        event.headers['sec-ch-ua'];
+    
+    const hasReferer = event.headers['referer'] || event.headers['origin'];
+    
+    const hasCookie = event.headers['cookie'];
+    
+    const acceptsHTML = accept.includes('text/html') && !hasRobloxUA;
+    
+    const isSuspiciousBrowser = hasBrowserUA && !hasRobloxUA && (hasSuspiciousHeaders || hasSecurityHeaders);
+    
+    if (hasBotUA) return true;
+    if (hasEmptyUA) return true;
+    if (isSuspiciousBrowser) return true;
+    if (hasSecurityHeaders) return true;
+    if (hasReferer && !hasRobloxUA) return true;
+    if (hasCookie) return true;
+    if (acceptsHTML) return true;
+    
+    if (!hasRobloxUA && hasBrowserUA) return true;
+    
+    return false;
 }
 
 function secureCompare(a, b) {
@@ -198,15 +218,22 @@ exports.handler = async (event) => {
     try {
         if ((path === '/' || path === '') && method === 'GET') {
             if (isBrowser(event)) return text(403, UNAUTHORIZED_HTML, 'text/html');
-            if (isBot(event)) { await logAccess(event, 'BOT', false); return text(200, generateFakeScript()); }
-            return json(200, { status: "online", version: "5.4.5" });
+            if (isBot(event)) { await logAccess(event, 'BOT_ROOT', false, { ua: event.headers['user-agent'] }); return text(200, generateFakeScript()); }
+            return json(200, { status: "online", version: "5.4.6" });
         }
 
         if (path === '/health') return json(200, { status: "ok" });
 
         if ((path === '/loader' || path === '/api/loader.lua') && method === 'GET') {
             if (isBrowser(event)) return text(403, UNAUTHORIZED_HTML, 'text/html');
-            if (isBot(event)) { await logAccess(event, 'BOT_LOADER', false); return text(200, generateFakeScript()); }
+            if (isBot(event)) { 
+                await logAccess(event, 'BOT_LOADER', false, { ua: event.headers['user-agent'] }); 
+                return text(200, generateFakeScript()); 
+            }
+            if (!isValidExecutor(event)) {
+                await logAccess(event, 'INVALID_EXECUTOR', false, { ua: event.headers['user-agent'] });
+                return text(200, generateFakeScript());
+            }
             await logAccess(event, 'LOADER', true);
             return text(200, getLoader(serverUrl));
         }
@@ -222,7 +249,10 @@ exports.handler = async (event) => {
 
         if (path === '/api/auth/challenge' && method === 'POST') {
             if (isBrowser(event)) return json(403, { success: false, error: "Forbidden" });
-            if (isBot(event) && !event.headers['x-executor-token']) { await logAccess(event, 'BOT_CHALLENGE', false); return json(403, { success: false, error: "Invalid" }); }
+            if (isBot(event) && !event.headers['x-executor-token']) { 
+                await logAccess(event, 'BOT_CHALLENGE', false, { ua: event.headers['user-agent'] }); 
+                return json(403, { success: false, error: "Invalid client" }); 
+            }
             const body = JSON.parse(event.body || '{}');
             if (!body.userId || !body.hwid || !body.placeId) return json(400, { success: false, error: "Missing fields" });
             const uid = parseInt(body.userId), pid = parseInt(body.placeId);
@@ -240,7 +270,10 @@ exports.handler = async (event) => {
 
         if (path === '/api/auth/verify' && method === 'POST') {
             if (isBrowser(event)) return json(403, { success: false, error: "Forbidden" });
-            if (isBot(event) && !event.headers['x-executor-token']) { await logAccess(event, 'BOT_VERIFY', false); return json(403, { success: false, error: "Invalid" }); }
+            if (isBot(event) && !event.headers['x-executor-token']) { 
+                await logAccess(event, 'BOT_VERIFY', false, { ua: event.headers['user-agent'] }); 
+                return json(403, { success: false, error: "Invalid client" }); 
+            }
             const body = JSON.parse(event.body || '{}');
             if (!body.challengeId || body.solution === undefined || !body.timestamp) return json(400, { success: false, error: "Missing fields" });
             const challenge = await db.getChallenge(body.challengeId);
@@ -326,7 +359,10 @@ exports.handler = async (event) => {
         }
 
         if (isBrowser(event)) return text(404, UNAUTHORIZED_HTML, 'text/html');
-        if (isBot(event)) return text(200, generateFakeScript());
+        if (isBot(event) || !isValidExecutor(event)) {
+            await logAccess(event, 'BOT_404', false, { ua: event.headers['user-agent'] });
+            return text(200, generateFakeScript());
+        }
         return json(404, { error: "Not found" });
 
     } catch (e) {
