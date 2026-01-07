@@ -1,0 +1,12 @@
+{
+  "name": "premium-loader",
+  "version": "5.4.5",
+  "private": true,
+  "dependencies": {
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
